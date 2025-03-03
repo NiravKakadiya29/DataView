@@ -69,4 +69,5 @@ def report():
     return render_template("report.html")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))  # For Render deployment
+    app.run(debug=True, host="0.0.0.0", port=port)
