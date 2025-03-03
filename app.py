@@ -9,7 +9,9 @@ from ydata_profiling import ProfileReport
 
 app = Flask(__name__)
 
-# Temporary directory for file storage
+# Ensure the static folder exists
+os.makedirs("static", exist_ok=True)
+
 app.config["UPLOAD_FOLDER"] = "/tmp/"
 
 def detect_encoding(filepath):
@@ -20,8 +22,8 @@ def detect_encoding(filepath):
         return result["encoding"]
 
 def generate_report(data, filename):
-    """Generate ProfileReport and save as HTML."""
-    report = ProfileReport(data, title="Data Profiling Report")
+    """Generate ProfileReport with all chunks combined."""
+    report = ProfileReport(data, title="Complete Data Profiling Report", minimal=True)
     report_path = os.path.join("static", filename)
     report.to_file(report_path)
     return report_path
@@ -40,9 +42,12 @@ def index():
             filepath = os.path.join(app.config["UPLOAD_FOLDER"], secure_filename(file.filename))
             file.save(filepath)
 
-            # Detect encoding and read CSV
+            # Detect encoding and read CSV in chunks
             encoding = detect_encoding(filepath)
-            data = pd.read_csv(filepath, encoding=encoding)
+            data_iter = pd.read_csv(filepath, encoding=encoding, chunksize=5000)  # Read in chunks
+            
+            # Process all chunks by concatenating them
+            data = pd.concat(data_iter, ignore_index=True)
 
             # Remove file after processing
             os.remove(filepath)
@@ -51,12 +56,14 @@ def index():
             try:
                 response = requests.get(url)
                 if response.status_code == 200:
-                    # Detect encoding from URL response
                     raw_data = response.content
                     detected_encoding = chardet.detect(raw_data)["encoding"]
                     
-                    # Read CSV with detected encoding
-                    data = pd.read_csv(io.StringIO(response.text), encoding=detected_encoding)
+                    # Read CSV with detected encoding in chunks
+                    data_iter = pd.read_csv(io.StringIO(response.text), encoding=detected_encoding, chunksize=5000)
+
+                    # Process all chunks by concatenating them
+                    data = pd.concat(data_iter, ignore_index=True)
                 else:
                     return render_template("index.html", error="Failed to fetch CSV from URL.")
             except Exception as e:
