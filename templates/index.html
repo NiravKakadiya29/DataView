@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Profiling App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex justify-center items-center h-screen">
+
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-lg">
+        <h1 class="text-2xl font-bold text-center text-blue-600 mb-4">Upload CSV or Enter URL</h1>
+
+        <form action="/" method="post" enctype="multipart/form-data" class="space-y-4">
+            <input type="file" name="file" accept=".csv" class="block w-full border p-2 rounded-lg">
+            
+            <p class="text-center text-gray-500">OR</p>
+            
+            <input type="text" name="url" placeholder="Enter CSV URL"
+                class="block w-full border p-2 rounded-lg">
+
+            <button type="submit" 
+                class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                Generate Report
+            </button>
+        </form>
+
+        <div id="loading" class="hidden text-center mt-4">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 mx-auto"></div>
+            <p class="text-gray-500 mt-2">Generating report...</p>
+        </div>
+
+        {% if error %}
+            <p class="text-red-500 mt-4 text-center">{{ error }}</p>
+        {% endif %}
+    </div>
+
+    <script>
+        document.querySelector("form").addEventListener("submit", function() {
+            document.getElementById("loading").classList.remove("hidden");
+        });
+    </script>
+
+</body>
+</html>

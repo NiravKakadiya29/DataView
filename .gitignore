@@ -1,0 +1,7 @@
+profiling
+uploads/
+<<<<<<< HEAD
+static/
+=======
+static/
+>>>>>>> 40fa1c6 (Fixed index lock issue and updated files)
