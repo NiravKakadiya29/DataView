@@ -3,14 +3,14 @@ import pandas as pd
 import requests
 import io
 import chardet
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, send_file
 from werkzeug.utils import secure_filename
 from ydata_profiling import ProfileReport
 
 app = Flask(__name__)
 
 # Ensure necessary folders exist
-os.makedirs("static", exist_ok=True)
+os.makedirs("static", exist_ok=True)    
 os.makedirs("uploads", exist_ok=True)
 
 app.config["UPLOAD_FOLDER"] = "uploads"
@@ -30,6 +30,12 @@ def generate_report(data, filename):
     report.to_file(report_path)
     return report_path
 
+def clean_data(data):
+    """Perform basic data cleaning."""
+    data.drop_duplicates(inplace=True)  # Remove duplicate rows
+    data.dropna(inplace=True)  # Remove missing values
+    return data
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -48,16 +54,32 @@ def index():
             encoding = detect_encoding(filepath)
             data = pd.read_csv(filepath, encoding=encoding)
 
+            # Clean data
+            data = clean_data(data)
+
+            # Save cleaned data for download
+            cleaned_file_path = os.path.join("static", "cleaned_data.csv")
+            data.to_csv(cleaned_file_path, index=False)
+
+            # Remove original uploaded file
+            os.remove(filepath)
+
         elif url:
             try:
                 response = requests.get(url)
                 if response.status_code == 200:
-                    # Detect encoding from URL response
                     raw_data = response.content
                     detected_encoding = chardet.detect(raw_data)["encoding"]
                     
-                    # Read CSV with detected encoding
                     data = pd.read_csv(io.StringIO(response.text), encoding=detected_encoding)
+
+                    # Clean data
+                    data = clean_data(data)
+
+                    # Save cleaned data for download
+                    cleaned_file_path = os.path.join("static", "cleaned_data.csv")
+                    data.to_csv(cleaned_file_path, index=False)
+
                 else:
                     return render_template("index.html", error="Failed to fetch CSV from URL.")
             except Exception as e:
@@ -72,6 +94,10 @@ def index():
 @app.route("/report")
 def report():
     return render_template("report.html")
+
+@app.route("/download_cleaned")
+def download_cleaned():
+    return send_file("static/cleaned_data.csv", as_attachment=True)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # For Render deployment
