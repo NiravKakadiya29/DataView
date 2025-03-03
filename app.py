@@ -8,6 +8,11 @@ from werkzeug.utils import secure_filename
 from ydata_profiling import ProfileReport
 
 app = Flask(__name__)
+
+# Ensure necessary folders exist
+os.makedirs("static", exist_ok=True)
+os.makedirs("uploads", exist_ok=True)
+
 app.config["UPLOAD_FOLDER"] = "uploads"
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
